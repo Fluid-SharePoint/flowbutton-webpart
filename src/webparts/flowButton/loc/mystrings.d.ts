@@ -9,6 +9,8 @@ declare interface IFlowButtonWebPartStrings {
   FlowUrlLabel: string;
   FlowUrlDescription: string;
   SecureLabel: string;
+  SecureListNameLabel: string,
+  SecureListNameDescription: string,
 }
 
 declare module 'FlowButtonWebPartStrings' {

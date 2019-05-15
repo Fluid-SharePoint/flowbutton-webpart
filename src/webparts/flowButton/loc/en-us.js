@@ -7,6 +7,8 @@ define([], function() {
     "IconNameDescription": "See OfficeFabric Link for more...",
     "FlowUrlLabel": "Flow URL",
     "FlowUrlDescription": "See link for more information...",
-    "SecureLabel": "Secure (this will create a sharepoint list to store keys)"
+    "SecureLabel": "Secure (this will create a sharepoint list to store keys)",
+    "SecureListNameLabel": "Secure List Name",
+    "SecureListNameDescription": "Name of the list used for secure keys",
   }
 });
