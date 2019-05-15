@@ -1,0 +1,183 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logicAppName": {
+      "type": "String",
+      "metadata": {
+        "description": "Name of the logic app."
+      }
+    },
+    "logicAppLocation": {
+      "defaultValue": "[resourceGroup().location]",
+      "allowedValues": ["eastasia", "southeastasia", "centralus", "eastus", "eastus2", "westus", "northcentralus", "southcentralus", "northeurope", "westeurope", "japanwest", "japaneast", "brazilsouth", "australiaeast", "australiasoutheast", "southindia", "centralindia", "westindia", "canadacentral", "canadaeast", "westcentralus", "westus2", "[resourceGroup().location]"],
+      "type": "String",
+      "metadata": {
+        "description": "Location of the logic app."
+      }
+    },
+    "sharepointonline_Connection_Name": {
+      "defaultValue": "sharepointonline",
+      "type": "String",
+      "metadata": {
+        "description": "Name of the connection."
+      }
+    }
+  },
+  "resources": [{
+    "type": "Microsoft.Logic/workflows",
+    "name": "[parameters('logicAppName')]",
+    "apiVersion": "2016-06-01",
+    "location": "[parameters('logicAppLocation')]",
+    "properties": {
+      "state": "Disabled",
+      "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {
+          "$connections": {
+            "defaultValue": {},
+            "type": "Object"
+          },
+          "$authentication": {
+            "defaultValue": {},
+            "type": "SecureObject"
+          }
+        },
+        "triggers": {
+          "manual": {
+            "type": "Request",
+            "kind": "Http",
+            "inputs": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ID": {
+                    "type": "integer"
+                  },
+                  "Key": {
+                    "type": "string"
+                  },
+                  "Source": {
+                    "type": "string"
+                  },
+                  "UserPrinciple": {
+                    "type": "string"
+                  },
+                  "Secure": {
+                    "type": "boolean"
+                  },
+                  "SecureListName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "method": "POST"
+            }
+          }
+        },
+        "actions": {
+          "Get_item": {
+            "runAfter": {},
+            "metadata": {
+              "flowSystemMetadata": {
+                "swaggerOperationId": "GetItem"
+              }
+            },
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['sharepointonline']['connectionId']"
+                }
+              },
+              "method": "get",
+              "path": "/datasets/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Source']))}/tables/@{encodeURIComponent(encodeURIComponent(triggerBody()?['SecureListName']))}/items/@{encodeURIComponent(triggerBody()?['ID'])}",
+              "authentication": "@parameters('$authentication')"
+            }
+          },
+          "GetItemID": {
+            "runAfter": {
+              "Get_item": ["Succeeded"]
+            },
+            "type": "InitializeVariable",
+            "inputs": {
+              "variables": [{
+                "name": "GetItemID",
+                "type": "String",
+                "value": "@{body('Get_Item')?['ID']}"
+              }]
+            }
+          },
+          "GetItemTitle": {
+            "runAfter": {
+              "GetItemID": ["Succeeded"]
+            },
+            "type": "InitializeVariable",
+            "inputs": {
+              "variables": [{
+                "name": "GetItemTitle",
+                "type": "String",
+                "value": "@{body('Get_Item')?['Title']}"
+              }]
+            }
+          },
+          "Condition": {
+            "actions": {},
+            "runAfter": {
+              "GetItemTitle": ["Succeeded"]
+            },
+            "expression": {
+              "and": [{
+                "equals": ["@variables('GetItemTitle')", "@triggerBody()?['Key']"]
+              }, {
+                "equals": ["@variables('GetItemID')", "@triggerBody()?['ID']"]
+              }, {
+                "equals": ["@triggerBody()?['Secure']", "@true"]
+              }]
+            },
+            "type": "If"
+          }
+        },
+        "outputs": {}
+      },
+      "parameters": {
+        "$connections": {
+          "value": {
+            "sharepointonline": {
+              "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'sharepointonline')]",
+              "connectionId": "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_Connection_Name'))]",
+              "connectionName": "[parameters('sharepointonline_Connection_Name')]"
+            }
+          }
+        }
+      },
+      "runtimeConfiguration": {
+        "lifetime": {
+          "unit": "Day",
+          "count": 30
+        },
+        "collections": {
+          "maximumItemCount": 100000
+        },
+        "performanceProfile": {
+          "throttles": {
+            "mode": "Low"
+          }
+        }
+      }
+    },
+    "dependsOn": ["[resourceId('Microsoft.Web/connections', parameters('sharepointonline_Connection_Name'))]"]
+  }, {
+    "type": "Microsoft.Web/connections",
+    "name": "[parameters('sharepointonline_Connection_Name')]",
+    "apiVersion": "2016-06-01",
+    "location": "[parameters('logicAppLocation')]",
+    "properties": {
+      "api": {
+        "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'sharepointonline')]"
+      },
+      "displayName": "[parameters('sharepointonline_Connection_Name')]"
+    }
+  }]
+}
