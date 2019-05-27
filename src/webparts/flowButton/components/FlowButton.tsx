@@ -38,6 +38,7 @@ export interface IFlowButtonProps {
   context: any;
   isSecure: boolean;
   secureListName: string;
+  style: string;
 }
 
 export interface IFlowButtonStates {
@@ -69,7 +70,7 @@ export default class FlowButton extends React.Component<IFlowButtonProps, IFlowB
  
   public render(): React.ReactElement<IFlowButtonProps> {
     return (
-      <div className={styles.flowButton}>
+      <div className={styles[this.props.style].container}>
         <div className={styles.container}>
           <Icon iconName={escape(this.props.iconname)} />
           <PrimaryButton text={escape(this.props.buttontext)} onClick={this._buttonClicked = this._buttonClicked.bind(this)} disabled={this.state.disabled} />
@@ -87,7 +88,7 @@ export default class FlowButton extends React.Component<IFlowButtonProps, IFlowB
             this._sendHttpRequest(true, item);
         }); 
     } else {
-      this._sendHttpRequest(false, { Title: "none", Id: 0 });
+      this._sendHttpRequest(false);
     }
   }
 
@@ -107,7 +108,7 @@ export default class FlowButton extends React.Component<IFlowButtonProps, IFlowB
     });
   }
 
-  private _sendHttpRequest(sendSecure: boolean, item: ISecureItem): Promise<Response> {
+  private _sendHttpRequest(sendSecure: boolean, item?: ISecureItem): Promise<Response> {
     const getUrl = this.props.flowurl;
 
     const webUrl = this.props.web.toUrl().substring(0, this.props.web.toUrl().length - 8);
